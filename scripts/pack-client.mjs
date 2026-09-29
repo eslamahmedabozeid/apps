@@ -16,21 +16,25 @@ const OUT = path.join(APP, "client-upload");
 const ZIP = path.join(APP, "greenola-school-app-client.zip");
 const PROD_ORDERS = "https://backend.greenolasa.com/api/v1/school-orders";
 
+const SKIP_DIRS = new Set([
+  ".git",
+  "node_modules",
+  "client-upload",
+  "vercel-preview",
+  "vercel-infra",
+  "docs",
+  "scripts",
+]);
+
 const SKIP_NAMES = new Set([
   "local-mock-menu.js",
   "school-payment-adapter.js",
   "dev-server.mjs",
   "package.json",
   "package-lock.json",
+  "vercel.json",
+  "PREVIEW.md",
   ".DS_Store",
-]);
-
-const SKIP_DIRS = new Set([
-  ".git",
-  "node_modules",
-  "client-upload",
-  "docs",
-  "scripts",
 ]);
 
 function rmrf(p) {
