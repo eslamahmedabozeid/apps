@@ -1,0 +1,10 @@
+{
+  "name": "greenola-school-app",
+  "private": true,
+  "description": "School parent ordering UI — local preview via node dev-server.mjs",
+  "scripts": {
+    "dev": "node dev-server.mjs",
+    "start": "node dev-server.mjs",
+    "pack": "node scripts/pack-client.mjs"
+  }
+}

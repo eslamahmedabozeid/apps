@@ -1,46 +1,7 @@
 /**
- * School HyperPay payment-session adapter (frontend only).
- *
- * THIS IS THE ONLY FILE to update when the backend payment API contract arrives.
- * Do not call company-subscription-orders or invent production endpoints here.
- *
- * Reference UI/flow (read-only): greenola_b2b_landingpage
- *   - paymentUrl / checkoutId → COPYandPAY widget
- *   - brands: apple_pay | mada | card
- *   - shopperResultUrl lands on return_url (?order=SCH-…)
- *
- * ---------------------------------------------------------------------------
- * PROVISIONAL request/response shapes (assumed — label: PROVISIONAL)
- * ---------------------------------------------------------------------------
- * Request (JSON POST to SchoolPaymentAdapter.endpoint when set):
- * {
- *   "order_no": "SCH-…",           // required — from school-checkout
- *   "order_id": "<uuid>|null",     // optional
- *   "amount": "26.00",             // PROVISIONAL: server must re-price; client sends for display only
- *   "currency": "SAR",
- *   "payment_method": "apple_pay"|"mada"|"card",
- *   "return_url": "https://school…/?order=SCH-…",
- *   "parent": { "name": "…", "phone": "+9665…" },
- *   "school_id": "bls",
- *   "branch_id": "<uuid>|null",
- *   "lang": "ar"|"en"
- * }
- *
- * Success response (same field names as landing-page extractCheckoutSession):
- * {
- *   "paymentUrl": "https://…/v1/paymentWidgets.js?checkoutId=…",  // preferred
- *   "checkoutId": "…",
- *   "supportedBrands": "VISA MASTER MADA APPLEPAY",               // optional
- *   "orderId": "SCH-…"                                            // optional echo
- * }
- * Nested `data.{paymentUrl,checkoutId,…}` is also accepted (PROVISIONAL).
- *
- * Error response (PROVISIONAL):
- * { "error": "…", "code": "…" }
- *
- * Mock modes (UI only — NEVER mark an order paid):
- *   ?payMock=awaiting|loading|session|session-error|widget-error
- *   or window.SCHOOL_PAYMENT_MOCK = same values
+ * LEGACY / UI-mock helper only.
+ * Live checkout+session is SchoolOrdersApi (assets/school-orders-api.js) → POST /checkout.
+ * Keep this file for ?payMock= previews; do not wire production payments through it.
  */
 (function (global) {
   "use strict";

@@ -18,9 +18,7 @@
 </script>
 <link rel="stylesheet" href="assets/tokens.css">
 <link rel="stylesheet" href="assets/payment.css">
-<script src="assets/school-payment-adapter.js"></script>
 <script src="assets/school-orders-api.js"></script>
-<script src="assets/local-mock-menu.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lucide@0.454.0/dist/umd/lucide.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -714,6 +712,7 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
     </div>
   </section>
 
+  <!-- Client package: production school-orders API only. -->
   <!-- ============ 8. HYPERPAY WIDGET ============ -->
   <section class="screen" id="s8">
     <div style="height:24px"></div>
@@ -809,7 +808,7 @@ function isLocalPreview(){
   return /^(localhost|127\.0\.0\.1)$/i.test(location.hostname||'');
 }
 function localReadonlyActive(){
-  /* Mock / file:// stay read-only. Localhost may call production school-orders via /__school-orders proxy. */
+  /* Client package: school-orders → production API only. */
   if(FORCE_LOCAL_MOCK) return true;
   if(location.protocol==='file:') return true;
   return false;
