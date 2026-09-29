@@ -1785,8 +1785,8 @@ function showMockWidgetPreview(ord){
 function renderPaySummary(ord){
   const el=$('#hpSum'); if(!el)return;
   el.innerHTML=
-    `<div class="row"><span>${t('ordNo')}</span><b>${esc(ord.order_no||'—')}</b></div>`+
-    `<div class="row"><span>${t('totalVat')}</span><b>${esc(moneyLabel(ord.total!=null?ord.total:'—', ord.currency))}</b></div>`;
+    `<div class="row"><span>${t('ordNo')}</span><b dir="ltr">${esc(ord.order_no||'—')}</b></div>`+
+    `<div class="row total"><span>${t('totalVat')}</span><b dir="ltr">${esc(moneyLabel(ord.total!=null?ord.total:'—', ord.currency))}</b></div>`;
 }
 
 function showPaymentBlocked(ord, back, payError){
@@ -1829,7 +1829,9 @@ function cleanupHyperPayWidget(){
   document.querySelectorAll('script[data-school-hyperpay="1"]').forEach(n=>n.remove());
   const form=$('#hpForm'); if(form) form.innerHTML='';
   if('wpwlOptions' in window) try{ delete window.wpwlOptions; }catch(e){ window.wpwlOptions=undefined; }
+  if(SCHOOL_WPWL_OBS){ try{ SCHOOL_WPWL_OBS.disconnect(); }catch(e){} SCHOOL_WPWL_OBS=null; }
   const ov=$('#hpOverlay'); if(ov) ov.classList.remove('on');
+  const pills=$('#hpPills'); if(pills){ pills.hidden=false; pills.classList.remove('is-redundant'); }
 }
 
 function mountHyperPayWidget({scriptSrc, checkoutId, method, order, supportedBrands}){
@@ -1846,6 +1848,8 @@ function mountHyperPayWidget({scriptSrc, checkoutId, method, order, supportedBra
   form.removeAttribute('action');
 
   if(pills){
+    pills.hidden=false;
+    pills.classList.remove('is-redundant');
     pills.innerHTML=brands.split(/\s+/).filter(Boolean).map(b=>`<span>${esc(b)}</span>`).join('');
   }
   if(hint){
@@ -1856,6 +1860,8 @@ function mountHyperPayWidget({scriptSrc, checkoutId, method, order, supportedBra
   if(ov) ov.classList.add('on');
 
   const ar=LANG==='ar';
+  /* iframeStyles: only affects iframe-hosted field interiors (card number etc.).
+     Parent CSS still styles iframe chrome (border/radius/height). */
   window.wpwlOptions={
     style:'plain',
     locale:ar?'ar':'en',
@@ -1874,8 +1880,24 @@ function mountHyperPayWidget({scriptSrc, checkoutId, method, order, supportedBra
       brand:'', cardNumber:'Card number', expiryDate:'Expiry',
       cvv:'CVV', cardHolder:'Card holder', submit:'Pay now'
     },
+    iframeStyles:{
+      'card-number-placeholder':{
+        'color':'#8b9a93','font-size':'16px','font-family':'Cairo,sans-serif','font-weight':'400'
+      },
+      'card-number-input':{
+        'color':'#0e1f1b','font-size':'16px','font-family':'Cairo,sans-serif','font-weight':'500',
+        'line-height':'48px'
+      },
+      'cvv-placeholder':{
+        'color':'#8b9a93','font-size':'16px','font-family':'Cairo,sans-serif'
+      },
+      'cvv-input':{
+        'color':'#0e1f1b','font-size':'16px','font-family':'Cairo,sans-serif','font-weight':'500'
+      }
+    },
     onReady:function(){
       enhanceSchoolWidgetDom(wrap, method, brands);
+      observeSchoolWidgetDom(wrap, method, brands);
       if(ov) ov.classList.remove('on');
     },
     onBeforeSubmitCard:function(){
@@ -1905,29 +1927,105 @@ function prepareSchoolCheckbox(node){
   node.setAttribute('data-hp-hidden','1');
 }
 
+function isSchoolAllowedWpwlGroup(group){
+  if(!(group instanceof HTMLElement)) return false;
+  if(group.querySelector('.wpwl-button-pay, .wpwl-control-cardNumber, input[name="card.number"], input[name="card.expiry"], input[name="card.cvv"], input[name="card.holder"], .wpwl-apple-pay-button, .wpwl-group-APPLEPAY'))
+    return true;
+  return ['brand','cardNumber','expiry','cvv','cardHolder','submit','APPLEPAY'].some(s=>group.classList.contains('wpwl-group-'+s));
+}
+function hideSchoolWpwlNode(node){
+  if(!(node instanceof HTMLElement)) return;
+  node.style.setProperty('display','none','important');
+  node.setAttribute('aria-hidden','true');
+  node.setAttribute('data-hp-hidden','1');
+}
+
+function forceSchoolLtrCardFields(root){
+  const sel=[
+    '.wpwl-group-cardNumber','.wpwl-group-expiry','.wpwl-group-cvv','.wpwl-group-cardHolder',
+    '.wpwl-control-cardNumber','.wpwl-control-expiry','.wpwl-control-cvv','.wpwl-control-cardHolder',
+    'input[name="card.number"]','input[name="card.expiry"]','input[name="card.cvv"]','input[name="card.holder"]',
+    'iframe.wpwl-control'
+  ].join(',');
+  root.querySelectorAll(sel).forEach(node=>{
+    if(!(node instanceof HTMLElement)) return;
+    node.setAttribute('dir','ltr');
+    node.style.direction='ltr';
+    node.style.unicodeBidi='isolate';
+    if(node instanceof HTMLInputElement||node.tagName==='IFRAME') node.style.textAlign='left';
+  });
+}
+
 function enhanceSchoolWidgetDom(root, method, brands){
   if(!root) return;
-  const appleOn=brandsIncludeApplePay(brands);
-  /* Hide non-card containers for card/mada flows; leave Apple Pay alone only when brands include it. */
-  if(method==='card'||method==='mada'||(method==='apple_pay'&&!appleOn)){
+  const appleOn=brandsIncludeApplePay(brands)||method==='apple_pay';
+  const cardFlow=method==='card'||method==='mada'||(method==='apple_pay'&&!brandsIncludeApplePay(brands));
+
+  /* Optional Click to Pay / virtual-account shells (not required card fields). */
+  root.querySelectorAll('.wpwl-container-clickToPay, .wpwl-form-clickToPay, .wpwl-form-virtualAccount').forEach(hideSchoolWpwlNode);
+
+  if(cardFlow){
     root.querySelectorAll('input[type="checkbox"]').forEach(prepareSchoolCheckbox);
+
+    root.querySelectorAll('.wpwl-form-card .wpwl-group, .wpwl-form-modern .wpwl-group, .wpwl-form .wpwl-group').forEach(group=>{
+      if(isSchoolAllowedWpwlGroup(group)) return;
+      group.querySelectorAll('input[type="checkbox"]').forEach(prepareSchoolCheckbox);
+      hideSchoolWpwlNode(group);
+    });
+
+    /* Hide non-card payment containers, but never Apple Pay when supported. */
     root.querySelectorAll('.wpwl-container').forEach(container=>{
       if(!(container instanceof HTMLElement)) return;
       const isCard=container.classList.contains('wpwl-container-card')||
         !!container.querySelector('.wpwl-form-card, .wpwl-group-cardNumber');
       const isApple=!!container.querySelector('.wpwl-group-APPLEPAY, .wpwl-apple-pay-button');
-      if(!isCard&&!(appleOn&&isApple)){
-        container.setAttribute('data-hp-hidden','1');
-        container.style.setProperty('display','none','important');
-      }
+      if(!isCard&&!(appleOn&&isApple)) hideSchoolWpwlNode(container);
     });
   }
+
   root.querySelectorAll('.wpwl-form').forEach(form=>{
     form.classList.add('wpwl-form-modern');
+
+    form.querySelectorAll('.wpwl-group-brand .wpwl-label').forEach(n=>{ if(n instanceof HTMLElement) n.style.display='none'; });
+    form.querySelectorAll('.wpwl-group-brand select, .wpwl-group-brand .wpwl-control-brand, .wpwl-group-brand .wpwl-control').forEach(n=>{
+      if(n instanceof HTMLElement) n.style.display='none';
+    });
+    form.querySelectorAll('.wpwl-icon, .wpwl-icon-question').forEach(n=>{ if(n instanceof HTMLElement) n.style.display='none'; });
+
+    const brandIcons=form.querySelectorAll('.wpwl-brand, .wpwl-brand-card');
+    const pills=$('#hpPills');
+    if(pills&&brandIcons.length){ pills.classList.add('is-redundant'); pills.hidden=true; }
+
+    const expiry=form.querySelector('.wpwl-group-expiry');
+    const cvv=form.querySelector('.wpwl-group-cvv');
+    if(expiry&&cvv&&!form.querySelector('.hp-inline-row')){
+      const row=document.createElement('div');
+      row.className='hp-inline-row';
+      if(expiry.parentNode){
+        expiry.parentNode.insertBefore(row, expiry);
+        row.appendChild(expiry);
+        row.appendChild(cvv);
+      }
+    }
+
     form.querySelectorAll('.wpwl-button-pay').forEach(btn=>{
       btn.textContent=LANG==='ar'?'ادفع الآن':'Pay now';
     });
   });
+
+  forceSchoolLtrCardFields(root);
+}
+
+let SCHOOL_WPWL_OBS=null;
+function observeSchoolWidgetDom(root, method, brands){
+  if(!root||typeof MutationObserver==='undefined') return;
+  if(SCHOOL_WPWL_OBS){ try{ SCHOOL_WPWL_OBS.disconnect(); }catch(e){} SCHOOL_WPWL_OBS=null; }
+  let t=null;
+  SCHOOL_WPWL_OBS=new MutationObserver(()=>{
+    if(t) clearTimeout(t);
+    t=setTimeout(()=>enhanceSchoolWidgetDom(root, method, brands), 80);
+  });
+  SCHOOL_WPWL_OBS.observe(root,{childList:true,subtree:true});
 }
 
 /* ---------- 8. order status (?order=SCH-...) — GET /status; never trust URL for paid ---------- */
