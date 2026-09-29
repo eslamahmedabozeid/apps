@@ -1,0 +1,203 @@
+/* School order — payment method cards + HyperPay widget chrome.
+   Card-field cleanup is method-scoped so Apple Pay stays visible. */
+
+.checkout-payment-card{
+  background:var(--bg-white);
+  border-radius:var(--r-md);
+  padding:12px 14px;
+  box-shadow:var(--sh-xs);
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  margin:14px 0 8px;
+}
+.checkout-section-label{
+  font:700 13px Cairo;
+  color:var(--ink-500);
+  margin-bottom:2px;
+}
+.pay-method{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:11px 12px;
+  border:1.5px solid #E8EFE9;
+  border-radius:12px;
+  cursor:pointer;
+  transition:border-color .2s,background .2s,box-shadow .2s;
+  background:var(--bg-white);
+  -webkit-tap-highlight-color:transparent;
+}
+.pay-method:active{transform:scale(.99)}
+.pay-method.selected{
+  border-color:var(--green-primary);
+  background:rgba(36,178,93,.04);
+  box-shadow:0 2px 10px -4px rgba(36,178,93,.25);
+}
+.pay-radio{
+  width:18px;height:18px;
+  border:2px solid #C8CEC4;
+  border-radius:50%;
+  flex-shrink:0;
+  position:relative;
+}
+.pay-method.selected .pay-radio{border-color:var(--green-primary)}
+.pay-method.selected .pay-radio::after{
+  content:'';
+  position:absolute;inset:3px;
+  border-radius:50%;
+  background:var(--green-primary);
+}
+.pay-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.pay-name{font:800 15px Cairo;color:var(--green-dark)}
+.pay-sub{font:600 12.5px Cairo;color:var(--ink-400)}
+.pay-logo{flex-shrink:0;display:flex;align-items:center;gap:4px}
+.pay-logo-apple{color:#000}
+.pay-logo-mada{
+  display:inline-flex;align-items:center;gap:4px;
+  background:#fff;border:1px solid #E0E0E0;
+  padding:5px 8px;border-radius:5px;
+}
+.mada-dots{display:inline-flex;gap:2px}
+.mada-dots span{width:7px;height:7px;border-radius:1.5px;display:inline-block}
+.mada-dots .d1{background:#84BA40}
+.mada-dots .d2{background:#00ABA8}
+.mada-dots .d3{background:#1A86C7}
+.mada-text{font:900 13px Cairo;color:#1F1F1F}
+.checkout-trust{
+  text-align:center;font:600 13px Cairo;color:var(--ink-400);
+  margin:8px 0 0;display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.checkout-trust svg{color:var(--green-primary);width:14px;height:14px}
+#paybtn.cta-black{
+  background:linear-gradient(135deg,#1F2521 0%,#000 100%);
+  box-shadow:0 8px 20px -6px rgba(0,0,0,.45);
+}
+
+/* Payment screen (s8) */
+#s8 .hp-summary{
+  background:var(--bg-white);border-radius:var(--r-md);
+  padding:12px 14px;margin:0 0 14px;box-shadow:var(--sh-sm);
+}
+#s8 .hp-summary .row{
+  display:flex;justify-content:space-between;gap:12px;
+  font:600 14px Cairo;padding:4px 0;
+}
+#s8 .hp-summary .row b{font-weight:800;color:var(--green-dark);direction:ltr}
+.hyperpay-widget-root{
+  --hp-green:#24b25d;--hp-green-dark:#004e42;--hp-ink:#0e1f1b;
+  --hp-ink-mute:#8b9a93;--hp-line:#e8efe9;
+  position:relative;min-height:200px;
+}
+.hp-form-card{
+  position:relative;padding:16px;border-radius:20px;
+  border:1px solid #e8efe9;background:#fff;
+  box-shadow:0 10px 30px -20px rgba(0,78,66,.25);
+}
+.hp-gateway-header{margin-bottom:14px}
+.hp-brand-pills{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.hp-brand-pills span{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:52px;height:30px;padding:0 10px;border-radius:8px;
+  border:1px solid #e8efe9;background:#fafcf9;
+  font:800 11px Cairo;color:#4a5c56;letter-spacing:.05em;
+}
+.hp-gateway-hint{margin:0;font:400 13px Cairo;color:#8b9a93}
+.hp-secure-note{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  margin:12px 0 0;font:400 12px Cairo;color:#8b9a93;
+}
+.hp-secure-note svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2}
+.hp-overlay{
+  position:absolute;inset:0;z-index:2;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+  background:rgba(255,255,255,.88);border-radius:20px;
+  opacity:0;pointer-events:none;transition:opacity .2s;
+}
+.hp-overlay.on{opacity:1;pointer-events:auto}
+.hp-spinner{
+  width:28px;height:28px;border-radius:50%;
+  border:3px solid #e8efe9;border-top-color:var(--green-primary);
+  animation:hp-spin .8s linear infinite;
+}
+@keyframes hp-spin{to{transform:rotate(360deg)}}
+.hp-error,.hp-blocked{
+  padding:16px;border-radius:var(--r-md);background:#FFF5F0;
+  color:var(--orange);font:600 14px/1.5 Cairo;text-align:center;
+}
+.hp-blocked{background:var(--bg-white);color:var(--green-dark);box-shadow:var(--sh-sm)}
+.hp-blocked .pn{font:400 13px Cairo;color:var(--ink-500)}
+.hp-blocked .pn b{font:700 16px Cairo;color:var(--green-dark);display:block;margin-top:2px;direction:ltr}
+.hp-blocked .go{font:700 15px Cairo;color:var(--orange);margin:12px 0}
+.hp-blocked .tt{font:400 12px/1.6 Cairo;color:var(--ink-500);margin-top:10px}
+.hp-mock-banner{
+  margin:0 0 12px;padding:10px 12px;border-radius:var(--r-md);
+  background:#FFF8E6;color:#7A5C00;font:700 12px/1.45 Cairo;text-align:center;
+  border:1px solid #F0DFA0;
+}
+#hpWidgetWrap[hidden],#hpBlocked[hidden],#hpError[hidden],#hpMockBanner[hidden]{display:none!important}
+
+/* Shared noise — never targets Apple Pay containers/buttons. */
+.hyperpay-widget-root .wpwl-container-clickToPay,
+.hyperpay-widget-root .wpwl-form-clickToPay,
+.hyperpay-widget-root .wpwl-group-installment,
+.hyperpay-widget-root .wpwl-group-installments,
+.hyperpay-widget-root .wpwl-wrapper-spinner,
+.hyperpay-widget-root .wpwl-spinner,
+.hyperpay-widget-root [data-hp-hidden="1"]{display:none!important}
+
+/*
+  Card/mada only — hide known non-card extras by explicit class (no blanket
+  :not(.wpwl-container-card), which would hide Apple Pay). Checkboxes are
+  handled in JS (auto-check + data-hp-hidden), not via display:none on all inputs.
+*/
+.hyperpay-widget-root[data-method="card"] .wpwl-form-virtualAccount,
+.hyperpay-widget-root[data-method="mada"] .wpwl-form-virtualAccount,
+.hyperpay-widget-root[data-method="card"] .wpwl-group-mobile,
+.hyperpay-widget-root[data-method="mada"] .wpwl-group-mobile,
+.hyperpay-widget-root[data-method="card"] .wpwl-group-customerMobile,
+.hyperpay-widget-root[data-method="mada"] .wpwl-group-customerMobile,
+.hyperpay-widget-root[data-method="card"] .wpwl-group-birthDate,
+.hyperpay-widget-root[data-method="mada"] .wpwl-group-birthDate,
+.hyperpay-widget-root[data-method="card"] .wpwl-group-birthdate,
+.hyperpay-widget-root[data-method="mada"] .wpwl-group-birthdate,
+.hyperpay-widget-root[data-method="card"] .wpwl-group-countryCode,
+.hyperpay-widget-root[data-method="mada"] .wpwl-group-countryCode,
+.hyperpay-widget-root[data-method="card"] .wpwl-group-country,
+.hyperpay-widget-root[data-method="mada"] .wpwl-group-country,
+.hyperpay-widget-root[data-method="card"] .wpwl-group-custom,
+.hyperpay-widget-root[data-method="mada"] .wpwl-group-custom{display:none!important}
+
+/* Card form layout (mada + Visa/MC). Not applied to apple_pay-only widget. */
+.hyperpay-widget-root[data-method="card"] .wpwl-form-card,
+.hyperpay-widget-root[data-method="mada"] .wpwl-form-card,
+.hyperpay-widget-root[data-method="card"] .wpwl-form-modern,
+.hyperpay-widget-root[data-method="mada"] .wpwl-form-modern{
+  display:flex!important;flex-direction:column!important;gap:10px!important;
+}
+.hyperpay-widget-root[data-method="card"] .wpwl-control,
+.hyperpay-widget-root[data-method="mada"] .wpwl-control,
+.hyperpay-widget-root[data-method="card"] input[name="card.number"],
+.hyperpay-widget-root[data-method="mada"] input[name="card.number"],
+.hyperpay-widget-root[data-method="card"] input[name="card.expiry"],
+.hyperpay-widget-root[data-method="mada"] input[name="card.expiry"],
+.hyperpay-widget-root[data-method="card"] input[name="card.cvv"],
+.hyperpay-widget-root[data-method="mada"] input[name="card.cvv"],
+.hyperpay-widget-root[data-method="card"] input[name="card.holder"],
+.hyperpay-widget-root[data-method="mada"] input[name="card.holder"]{
+  direction:ltr;text-align:left;unicode-bidi:isolate;
+}
+.hyperpay-widget-root .wpwl-button-pay{
+  width:100%;min-height:48px;border:0;border-radius:12px;
+  background:var(--green-primary);color:#fff;
+  font:800 16px Cairo;cursor:pointer;
+}
+.hyperpay-widget-root .wpwl-apple-pay-button,
+.hyperpay-widget-root .wpwl-group-APPLEPAY .wpwl-button{
+  background:#000!important;
+  box-shadow:0 8px 20px -8px rgba(0,0,0,.45)!important;
+}
+.hyperpay-widget-root[data-method="apple_pay"] .wpwl-group-APPLEPAY,
+.hyperpay-widget-root[data-method="apple_pay"] .wpwl-apple-pay-button{
+  display:block!important;
+}
