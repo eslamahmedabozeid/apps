@@ -901,8 +901,8 @@ const T={
      s7h1:'تم استلام طلبك',s7sub:'وصلتنا وجبات ولدك وبتجهز في يومها.',ordNo:'رقم الطلب',meal:'وجبة',day:'يوم',firstDel:'أول توصيل',
      s7note:'أي تغيير أو استفسار، كلّمنا واتساب ومعك رقم الطلب.',wa:'تواصل معنا واتساب',tagline:'بنعيشها سوا',footer:'جرينولا · الرياض · 0509988394',
      loading:'لحظة، نجهز لك المنيو…',errMenu:'ما قدرنا نحمّل المنيو، تأكد من النت وجرّب مرة ثانية',errNet:'صار خطأ في الاتصال، جرّب مرة ثانية',
-     errLocalOrigin:'التشغيل من الملف المحلي أو localhost محجوب من الـ API (CORS). شغّل: npm run dev داخل app/ ثم افتح http://127.0.0.1:5173/bls — أو اطلب السماح بأصل localhost من الـ backend.',
-     errLocalReadonly:'معاينة محلية للقراءة فقط — لن يُنشأ طلب حقيقي ولن يُنفَّذ دفع.',
+     errLocalOrigin:'تعذر تحميل البيانات من هذا المكان. افتح التطبيق عبر الرابط الرسمي للمدرسة على المتصفح.',
+     errLocalReadonly:'لا يمكن إتمام الطلب من هذا المكان. افتح الرابط الرسمي للمدرسة عبر المتصفح.',
      retry:'حاول مرة ثانية',
      tagPre:'بالتعاون مع ',paying:'جاري تحويلك للدفع…',payPh:'عرض حالة الطلب',payPhNote:'طلبك محفوظ. أكمل الدفع عندما تصبح بوابة الدفع متاحة، أو تابع حالة الطلب.',
      stPendingH:'جاري تأكيد الدفع',stPendingP:'ننتظر تأكيد البنك، الصفحة تتحدث لحالها.',stFailedH:'ما اكتمل الدفع',stFailedP:'ما انخصم منك شي. تقدر تطلب من جديد.',
@@ -935,8 +935,8 @@ const T={
      s7h1:'Order received',s7sub:'We\'ve got your child\'s meals. Each is prepared fresh on its day.',ordNo:'Order number',meal:'meals',day:'days',firstDel:'First delivery',
      s7note:'For any change or question, message us on WhatsApp with your order number.',wa:'Message us on WhatsApp',tagline:'We live it together',footer:'Greenola · Riyadh · 0509988394',
      loading:'One moment, loading the menu…',errMenu:'Couldn\'t load the menu. Check your connection and try again',errNet:'Connection problem, please try again',
-     errLocalOrigin:'Local / localhost is blocked by API CORS. Run: npm run dev inside app/, then open http://127.0.0.1:5173/bls — or ask backend to allow localhost Origins.',
-     errLocalReadonly:'Local preview is read-only — no real orders and no payments.',
+     errLocalOrigin:'Data cannot load from this location. Please open the official school link in your browser.',
+     errLocalReadonly:'Orders cannot be completed from this location. Please open the official school link in your browser.',
      retry:'Try again',
      tagPre:'In partnership with ',paying:'Taking you to payment…',payPh:'View order status',payPhNote:'Your order is saved. Complete payment when the gateway is available, or check order status.',
      stPendingH:'Confirming your payment',stPendingP:'Waiting for the bank to confirm. This page updates by itself.',stFailedH:'Payment not completed',stFailedP:'You were not charged. You can place the order again.',
@@ -2049,6 +2049,13 @@ async function openStatus(no){
   STATUS=null;
   STATUS_POLL_NO=no;
   go(7);
+  const sec=$('#s7');
+  if(sec) sec.className='screen on st-pending';
+  const h=$('#s7h1'),p=$('#s7sub');
+  if(h){ h.dataset.t='stPendingH'; h.textContent=t('stPendingH'); }
+  if(p){ p.dataset.t='stPendingP'; p.textContent=t('stPendingP'); }
+  const circ=$('#s7 .circ'); if(circ) circ.innerHTML=`<i data-lucide="clock" width="30" stroke-width="3"></i>`;
+  icons();
   $('#ordno').textContent=no;
   $('#sum7').innerHTML=`<div class="full">${t('loading')}</div>`;
   $('#s7act').innerHTML='';
@@ -2072,7 +2079,16 @@ async function pollOrderStatus(no){
     if(STATUS_POLL_NO!==no) return;
     stopStatusPoll();
     STATUS=null;
-    $('#sum7').innerHTML=`<div class="full">${e.code==='ORDER_NOT_FOUND'?t('notFound'):(e.msg||t('errNet'))}</div>`;
+    const missing=e.code==='ORDER_NOT_FOUND';
+    const sec=$('#s7');
+    if(sec) sec.className='screen on st-failed';
+    const h=$('#s7h1'),p=$('#s7sub');
+    if(h){ h.dataset.t=missing?'notFound':'stFailedH'; h.textContent=t(missing?'notFound':'stFailedH'); }
+    if(p){ p.dataset.t=missing?'nfSub':'stFailedP'; p.textContent=missing?t('notFound'):t('stFailedP'); }
+    const circ=$('#s7 .circ'); if(circ) circ.innerHTML=`<i data-lucide="x" width="30" stroke-width="3"></i>`;
+    icons();
+    $('#sum7').innerHTML=`<div class="full">${esc(missing?t('notFound'):(e.msg||t('errNet')))}</div>`;
+    $('#s7act').innerHTML=`<div style="padding:0 var(--s4)"><a class="btn btn-outline btn-block retry" href="${schoolHome()}">${t('startOver')}</a></div>`;
     toast(e.msg||t('errNet'),'bad');
   }finally{
     STATUS_INFLIGHT=false;
